@@ -10,8 +10,8 @@ on:
 permissions: read-all
 
 jobs:
-  check-banned-languages:
-    name: Check for banned languages
+  check-banned-patterns:
+    name: Check for banned languages/patterns
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
@@ -42,11 +42,17 @@ jobs:
       
       - name: Check for Python (non-SaltStack)
         run: |
-          # Allow Python in SaltStack directories
           banned_py=$(find . -name "*.py" | grep -v -E "(salt|pillar|states|_modules|_states)" | head -1)
           if [ -n "$banned_py" ]; then
             echo "::error::Python files found outside SaltStack! Use ReScript/Rust (per RSR policy)"
-            echo "Found: $banned_py"
             exit 1
           fi
           echo "✓ No banned Python files found"
+      
+      - name: Check for Makefiles
+        run: |
+          if [ -f "Makefile" ] || [ -f "makefile" ] || find . -name "*.mk" | grep -q .; then
+            echo "::error::Makefile found! Use Justfile or Mustfile instead (per RSR policy)"
+            exit 1
+          fi
+          echo "✓ No Makefiles found"

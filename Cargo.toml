@@ -59,6 +59,8 @@ directories = "5"
 
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
+# Security fix: override transitive ring to patch CVE-2025-4432
+ring = "0.17.13"
 uuid = { version = "1", features = ["v4"] }
 toml = "0.8"
 

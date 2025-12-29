@@ -4,7 +4,16 @@
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::MeshAction;
+
+/// Mesh action types
+#[derive(Debug, Clone)]
+pub enum MeshAction {
+    Discover,
+    Join { peer: String },
+    Share { solution_id: String },
+    Sync,
+    Status,
+}
 
 /// Handle mesh subcommands
 pub async fn handle(action: MeshAction, storage: &Storage, cache: &Cache) -> Result<()> {

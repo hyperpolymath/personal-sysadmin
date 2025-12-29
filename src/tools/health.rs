@@ -2,11 +2,12 @@
 //! System health summary
 
 use anyhow::Result;
+use sysinfo::{System, Disks};
 use crate::storage::Storage;
 use crate::cache::Cache;
 
 pub async fn show(_storage: &Storage, _cache: &Cache) -> Result<()> {
-    let mut sys = sysinfo::System::new_all();
+    let mut sys = System::new_all();
     sys.refresh_all();
 
     println!("System Health Summary");
@@ -16,29 +17,38 @@ pub async fn show(_storage: &Storage, _cache: &Cache) -> Result<()> {
     let mut issues = vec![];
 
     // CPU check
-    let cpu = sys.global_cpu_info().cpu_usage();
+    let cpu = sys.global_cpu_usage();
     if cpu > 90.0 {
         issues.push(format!("High CPU: {:.1}%", cpu));
     }
 
     // Memory check
-    let mem_pct = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
+    let mem_total = sys.total_memory();
+    let mem_pct = if mem_total > 0 {
+        (sys.used_memory() as f64 / mem_total as f64) * 100.0
+    } else {
+        0.0
+    };
     if mem_pct > 90.0 {
         issues.push(format!("High Memory: {:.1}%", mem_pct));
     }
 
     // Disk check
-    for disk in sys.disks() {
-        let used_pct = 100.0 - (disk.available_space() as f64 / disk.total_space() as f64 * 100.0);
-        if used_pct > 90.0 {
-            issues.push(format!("Disk {} at {:.1}%", disk.mount_point().display(), used_pct));
+    let disks = Disks::new_with_refreshed_list();
+    for disk in disks.list() {
+        let total = disk.total_space();
+        if total > 0 {
+            let used_pct = 100.0 - (disk.available_space() as f64 / total as f64 * 100.0);
+            if used_pct > 90.0 {
+                issues.push(format!("Disk {} at {:.1}%", disk.mount_point().display(), used_pct));
+            }
         }
     }
 
     // Load check
-    let load = sys.load_average();
+    let load = System::load_average();
     let cpu_count = sys.cpus().len() as f64;
-    if load.one > cpu_count * 2.0 {
+    if cpu_count > 0.0 && load.one > cpu_count * 2.0 {
         issues.push(format!("High load: {:.2}", load.one));
     }
 

@@ -19,6 +19,14 @@ mod ai;
 mod forum;
 mod p2p;
 
+// Re-use action enums from tool modules
+use tools::process::ProcessAction;
+use tools::network::NetworkAction;
+use tools::disk::DiskAction;
+use tools::service::ServiceAction;
+use tools::security::SecurityAction;
+use p2p::MeshAction;
+
 #[derive(Parser)]
 #[command(name = "psa")]
 #[command(author = "hyperpolymath")]
@@ -39,35 +47,35 @@ enum Commands {
     #[command(alias = "ps")]
     Process {
         #[command(subcommand)]
-        action: ProcessAction,
+        action: ProcessActionCli,
     },
 
     /// Network diagnostics (like TCPView)
     #[command(alias = "net")]
     Network {
         #[command(subcommand)]
-        action: NetworkAction,
+        action: NetworkActionCli,
     },
 
     /// Disk and storage management
     #[command(alias = "df")]
     Disk {
         #[command(subcommand)]
-        action: DiskAction,
+        action: DiskActionCli,
     },
 
     /// Service management (like Autoruns)
     #[command(alias = "svc")]
     Service {
         #[command(subcommand)]
-        action: ServiceAction,
+        action: ServiceActionCli,
     },
 
     /// Security scanning and hardening
     #[command(alias = "sec")]
     Security {
         #[command(subcommand)]
-        action: SecurityAction,
+        action: SecurityActionCli,
     },
 
     /// Diagnose a problem (AI-assisted)
@@ -100,7 +108,7 @@ enum Commands {
     /// P2P mesh commands
     Mesh {
         #[command(subcommand)]
-        action: MeshAction,
+        action: MeshActionCli,
     },
 
     /// Interactive monitoring dashboard
@@ -110,8 +118,9 @@ enum Commands {
     Health,
 }
 
-#[derive(Subcommand)]
-enum ProcessAction {
+// Action enums with clap derive for CLI parsing
+#[derive(Subcommand, Clone)]
+enum ProcessActionCli {
     /// List all processes with resource usage
     List {
         /// Sort by (cpu, mem, pid, name)
@@ -133,8 +142,8 @@ enum ProcessAction {
     Watch { pid: u32 },
 }
 
-#[derive(Subcommand)]
-enum NetworkAction {
+#[derive(Subcommand, Clone)]
+enum NetworkActionCli {
     /// Show all connections (like TCPView)
     Connections {
         /// Filter by state (LISTEN, ESTABLISHED, etc.)
@@ -153,8 +162,8 @@ enum NetworkAction {
     Watch,
 }
 
-#[derive(Subcommand)]
-enum DiskAction {
+#[derive(Subcommand, Clone)]
+enum DiskActionCli {
     /// Show disk usage summary
     Usage,
     /// Find large files
@@ -174,8 +183,8 @@ enum DiskAction {
     Health,
 }
 
-#[derive(Subcommand)]
-enum ServiceAction {
+#[derive(Subcommand, Clone)]
+enum ServiceActionCli {
     /// List all services
     List {
         /// Show only failed
@@ -190,8 +199,8 @@ enum ServiceAction {
     Deps { name: String },
 }
 
-#[derive(Subcommand)]
-enum SecurityAction {
+#[derive(Subcommand, Clone)]
+enum SecurityActionCli {
     /// Scan for common vulnerabilities
     Scan,
     /// Check file permissions
@@ -204,8 +213,8 @@ enum SecurityAction {
     Exposure,
 }
 
-#[derive(Subcommand)]
-enum MeshAction {
+#[derive(Subcommand, Clone)]
+enum MeshActionCli {
     /// Discover other PSA instances on network
     Discover,
     /// Join a mesh network
@@ -216,6 +225,80 @@ enum MeshAction {
     Sync,
     /// Show mesh status
     Status,
+}
+
+// Conversion helpers
+impl From<ProcessActionCli> for ProcessAction {
+    fn from(cli: ProcessActionCli) -> Self {
+        match cli {
+            ProcessActionCli::List { sort, top } => ProcessAction::List { sort, top },
+            ProcessActionCli::Tree => ProcessAction::Tree,
+            ProcessActionCli::Find { pattern } => ProcessAction::Find { pattern },
+            ProcessActionCli::Info { pid } => ProcessAction::Info { pid },
+            ProcessActionCli::Kill { pid } => ProcessAction::Kill { pid },
+            ProcessActionCli::Watch { pid } => ProcessAction::Watch { pid },
+        }
+    }
+}
+
+impl From<NetworkActionCli> for NetworkAction {
+    fn from(cli: NetworkActionCli) -> Self {
+        match cli {
+            NetworkActionCli::Connections { state } => NetworkAction::Connections { state },
+            NetworkActionCli::Listen => NetworkAction::Listen,
+            NetworkActionCli::Bandwidth => NetworkAction::Bandwidth,
+            NetworkActionCli::Ping { host } => NetworkAction::Ping { host },
+            NetworkActionCli::Dns { domain } => NetworkAction::Dns { domain },
+            NetworkActionCli::Watch => NetworkAction::Watch,
+        }
+    }
+}
+
+impl From<DiskActionCli> for DiskAction {
+    fn from(cli: DiskActionCli) -> Self {
+        match cli {
+            DiskActionCli::Usage => DiskAction::Usage,
+            DiskActionCli::Large { min_size, path } => DiskAction::Large { min_size, path },
+            DiskActionCli::Io => DiskAction::Io,
+            DiskActionCli::Duplicates { path } => DiskAction::Duplicates { path },
+            DiskActionCli::Health => DiskAction::Health,
+        }
+    }
+}
+
+impl From<ServiceActionCli> for ServiceAction {
+    fn from(cli: ServiceActionCli) -> Self {
+        match cli {
+            ServiceActionCli::List { failed } => ServiceAction::List { failed },
+            ServiceActionCli::Status { name } => ServiceAction::Status { name },
+            ServiceActionCli::Startup => ServiceAction::Startup,
+            ServiceActionCli::Deps { name } => ServiceAction::Deps { name },
+        }
+    }
+}
+
+impl From<SecurityActionCli> for SecurityAction {
+    fn from(cli: SecurityActionCli) -> Self {
+        match cli {
+            SecurityActionCli::Scan => SecurityAction::Scan,
+            SecurityActionCli::Perms { path } => SecurityAction::Perms { path },
+            SecurityActionCli::Audit => SecurityAction::Audit,
+            SecurityActionCli::Rootkit => SecurityAction::Rootkit,
+            SecurityActionCli::Exposure => SecurityAction::Exposure,
+        }
+    }
+}
+
+impl From<MeshActionCli> for MeshAction {
+    fn from(cli: MeshActionCli) -> Self {
+        match cli {
+            MeshActionCli::Discover => MeshAction::Discover,
+            MeshActionCli::Join { peer } => MeshAction::Join { peer },
+            MeshActionCli::Share { solution_id } => MeshAction::Share { solution_id },
+            MeshActionCli::Sync => MeshAction::Sync,
+            MeshActionCli::Status => MeshAction::Status,
+        }
+    }
 }
 
 #[tokio::main]
@@ -241,19 +324,19 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Process { action } => {
-            tools::process::handle(action, &storage, &cache).await?;
+            tools::process::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Network { action } => {
-            tools::network::handle(action, &storage, &cache).await?;
+            tools::network::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Disk { action } => {
-            tools::disk::handle(action, &storage, &cache).await?;
+            tools::disk::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Service { action } => {
-            tools::service::handle(action, &storage, &cache).await?;
+            tools::service::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Security { action } => {
-            tools::security::handle(action, &storage, &cache).await?;
+            tools::security::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Diagnose { problem, local_only } => {
             ai::diagnose(&problem, local_only, &storage, &cache).await?;
@@ -265,7 +348,7 @@ async fn main() -> anyhow::Result<()> {
             reasoning::learn(&category, solution, &storage).await?;
         }
         Commands::Mesh { action } => {
-            p2p::handle(action, &storage, &cache).await?;
+            p2p::handle(action.into(), &storage, &cache).await?;
         }
         Commands::Monitor => {
             tools::monitor::run(&storage, &cache).await?;

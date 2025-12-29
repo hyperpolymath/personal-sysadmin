@@ -2,9 +2,19 @@
 //! Disk and storage management tools
 
 use anyhow::Result;
+use sysinfo::Disks;
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::DiskAction;
+
+/// Disk action types
+#[derive(Debug, Clone)]
+pub enum DiskAction {
+    Usage,
+    Large { min_size: String, path: String },
+    Io,
+    Duplicates { path: String },
+    Health,
+}
 
 pub async fn handle(action: DiskAction, _storage: &Storage, _cache: &Cache) -> Result<()> {
     match action {
@@ -18,17 +28,16 @@ pub async fn handle(action: DiskAction, _storage: &Storage, _cache: &Cache) -> R
 }
 
 async fn show_usage() -> Result<()> {
-    let mut sys = sysinfo::System::new_all();
-    sys.refresh_disks_list();
+    let disks = Disks::new_with_refreshed_list();
 
     println!("{:<20} {:>10} {:>10} {:>10} {:>6}", "FILESYSTEM", "SIZE", "USED", "AVAIL", "USE%");
     println!("{}", "-".repeat(60));
 
-    for disk in sys.disks() {
+    for disk in disks.list() {
         let total = disk.total_space();
         let avail = disk.available_space();
         let used = total - avail;
-        let use_pct = (used as f64 / total as f64) * 100.0;
+        let use_pct = if total > 0 { (used as f64 / total as f64) * 100.0 } else { 0.0 };
 
         println!(
             "{:<20} {:>10} {:>10} {:>10} {:>5.1}%",

@@ -4,7 +4,17 @@
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::NetworkAction;
+
+/// Network action types
+#[derive(Debug, Clone)]
+pub enum NetworkAction {
+    Connections { state: Option<String> },
+    Listen,
+    Bandwidth,
+    Ping { host: String },
+    Dns { domain: String },
+    Watch,
+}
 
 /// Handle network subcommands
 pub async fn handle(action: NetworkAction, _storage: &Storage, _cache: &Cache) -> Result<()> {

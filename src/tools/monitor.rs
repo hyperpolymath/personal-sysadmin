@@ -2,6 +2,7 @@
 //! Interactive monitoring dashboard
 
 use anyhow::Result;
+use sysinfo::System;
 use crate::storage::Storage;
 use crate::cache::Cache;
 
@@ -11,7 +12,7 @@ pub async fn run(_storage: &Storage, _cache: &Cache) -> Result<()> {
     println!("Press Ctrl+C to exit\n");
 
     loop {
-        let mut sys = sysinfo::System::new_all();
+        let mut sys = System::new_all();
         sys.refresh_all();
 
         // Clear screen
@@ -21,12 +22,12 @@ pub async fn run(_storage: &Storage, _cache: &Cache) -> Result<()> {
         println!("{}", "-".repeat(50));
 
         // CPU
-        println!("\nCPU: {:.1}%", sys.global_cpu_info().cpu_usage());
+        println!("\nCPU: {:.1}%", sys.global_cpu_usage());
 
         // Memory
         let mem_used = sys.used_memory();
         let mem_total = sys.total_memory();
-        let mem_pct = (mem_used as f64 / mem_total as f64) * 100.0;
+        let mem_pct = if mem_total > 0 { (mem_used as f64 / mem_total as f64) * 100.0 } else { 0.0 };
         println!(
             "Memory: {:.1}% ({:.1} GB / {:.1} GB)",
             mem_pct,
@@ -35,7 +36,7 @@ pub async fn run(_storage: &Storage, _cache: &Cache) -> Result<()> {
         );
 
         // Load average
-        let load = sys.load_average();
+        let load = System::load_average();
         println!("Load: {:.2} {:.2} {:.2}", load.one, load.five, load.fifteen);
 
         // Top processes
@@ -47,13 +48,13 @@ pub async fn run(_storage: &Storage, _cache: &Cache) -> Result<()> {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        for (pid, proc) in procs.iter().take(5) {
+        for (pid, process) in procs.iter().take(5) {
             println!(
-                "  {:>7} {:>5.1}% {:>8.1}MB  {}",
+                "  {:>7} {:>5.1}% {:>8.1}MB  {:?}",
                 pid.as_u32(),
-                proc.cpu_usage(),
-                proc.memory() as f64 / 1024.0 / 1024.0,
-                proc.name()
+                process.cpu_usage(),
+                process.memory() as f64 / 1024.0 / 1024.0,
+                process.name()
             );
         }
 

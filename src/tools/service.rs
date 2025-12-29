@@ -4,7 +4,15 @@
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::ServiceAction;
+
+/// Service action types
+#[derive(Debug, Clone)]
+pub enum ServiceAction {
+    List { failed: bool },
+    Status { name: String },
+    Startup,
+    Deps { name: String },
+}
 
 pub async fn handle(action: ServiceAction, _storage: &Storage, _cache: &Cache) -> Result<()> {
     match action {

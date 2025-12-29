@@ -4,7 +4,16 @@
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::SecurityAction;
+
+/// Security action types
+#[derive(Debug, Clone)]
+pub enum SecurityAction {
+    Scan,
+    Perms { path: String },
+    Audit,
+    Rootkit,
+    Exposure,
+}
 
 pub async fn handle(action: SecurityAction, _storage: &Storage, _cache: &Cache) -> Result<()> {
     match action {
@@ -138,11 +147,12 @@ async fn check_rootkits() -> Result<()> {
         .args(["/dev", "-type", "f", "2>/dev/null"])
         .output()
         .await?;
-    let files: Vec<_> = String::from_utf8_lossy(&output.stdout).lines().collect();
-    if files.is_empty() {
+    let files_str = String::from_utf8_lossy(&output.stdout);
+    let file_count = files_str.lines().count();
+    if file_count == 0 {
         println!("  ✓ No unexpected files in /dev");
     } else {
-        println!("  ! Found {} files in /dev (review manually)", files.len());
+        println!("  ! Found {} files in /dev (review manually)", file_count);
     }
 
     println!("\nRecommended: Install rkhunter or chkrootkit for thorough check");

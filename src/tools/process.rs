@@ -2,10 +2,20 @@
 //! Process management tools (like Process Explorer)
 
 use anyhow::Result;
-use sysinfo::{ProcessExt, System, SystemExt, PidExt};
+use sysinfo::{System, Pid};
 use crate::storage::Storage;
 use crate::cache::Cache;
-use crate::ProcessAction;
+
+/// Process action types
+#[derive(Debug, Clone)]
+pub enum ProcessAction {
+    List { sort: String, top: Option<usize> },
+    Tree,
+    Find { pattern: String },
+    Info { pid: u32 },
+    Kill { pid: u32 },
+    Watch { pid: u32 },
+}
 
 /// Handle process subcommands
 pub async fn handle(action: ProcessAction, _storage: &Storage, _cache: &Cache) -> Result<()> {
@@ -61,7 +71,7 @@ fn list_processes(sys: &System, sort_by: &str, top: Option<usize>) -> Result<()>
 
     for (pid, process) in processes {
         println!(
-            "{:>7} {:>5.1}% {:>8.1} {:>10} {}",
+            "{:>7} {:>5.1}% {:>8.1} {:>10} {:?}",
             pid.as_u32(),
             process.cpu_usage(),
             process.memory() as f64 / 1024.0 / 1024.0,
@@ -99,9 +109,9 @@ fn show_process_tree(sys: &System) -> Result<()> {
     ) {
         let connector = if is_last { "└── " } else { "├── " };
         let name = sys
-            .process(sysinfo::Pid::from_u32(pid))
-            .map(|p| p.name())
-            .unwrap_or("???");
+            .process(Pid::from_u32(pid))
+            .map(|p| format!("{:?}", p.name()))
+            .unwrap_or_else(|| "???".to_string());
 
         println!("{}{}{} ({})", prefix, connector, name, pid);
 
@@ -127,11 +137,14 @@ fn find_processes(sys: &System, pattern: &str) -> Result<()> {
     println!("{}", "-".repeat(50));
 
     for (pid, process) in sys.processes() {
-        if process.name().to_lowercase().contains(&pattern_lower)
-            || process.cmd().iter().any(|c| c.to_lowercase().contains(&pattern_lower))
-        {
+        let name = process.name().to_string_lossy().to_lowercase();
+        let cmd_match = process.cmd().iter().any(|c| {
+            c.to_string_lossy().to_lowercase().contains(&pattern_lower)
+        });
+
+        if name.contains(&pattern_lower) || cmd_match {
             println!(
-                "{:>7} {:>5.1}% {:>8.1} {}",
+                "{:>7} {:>5.1}% {:>8.1} {:?}",
                 pid.as_u32(),
                 process.cpu_usage(),
                 process.memory() as f64 / 1024.0 / 1024.0,
@@ -144,13 +157,13 @@ fn find_processes(sys: &System, pattern: &str) -> Result<()> {
 }
 
 fn show_process_info(sys: &System, pid: u32) -> Result<()> {
-    let pid = sysinfo::Pid::from_u32(pid);
+    let pid = Pid::from_u32(pid);
 
     if let Some(process) = sys.process(pid) {
         println!("Process Information");
         println!("{}", "=".repeat(40));
         println!("PID:        {}", pid.as_u32());
-        println!("Name:       {}", process.name());
+        println!("Name:       {:?}", process.name());
         println!("Status:     {:?}", process.status());
         println!("CPU Usage:  {:.1}%", process.cpu_usage());
         println!("Memory:     {:.1} MB", process.memory() as f64 / 1024.0 / 1024.0);
@@ -173,12 +186,12 @@ fn show_process_info(sys: &System, pid: u32) -> Result<()> {
 
         println!("\nCommand Line:");
         for arg in process.cmd() {
-            println!("  {}", arg);
+            println!("  {:?}", arg);
         }
 
         println!("\nEnvironment (sample):");
-        for (key, value) in process.environ().iter().take(10) {
-            println!("  {}={}", key, value);
+        for env in process.environ().iter().take(10) {
+            println!("  {:?}", env);
         }
     } else {
         println!("Process {} not found", pid.as_u32());
@@ -188,10 +201,10 @@ fn show_process_info(sys: &System, pid: u32) -> Result<()> {
 }
 
 fn kill_process(sys: &System, pid: u32) -> Result<()> {
-    let pid = sysinfo::Pid::from_u32(pid);
+    let pid = Pid::from_u32(pid);
 
     if let Some(process) = sys.process(pid) {
-        println!("Killing process {} ({})", pid.as_u32(), process.name());
+        println!("Killing process {} ({:?})", pid.as_u32(), process.name());
         if process.kill() {
             println!("Process terminated successfully");
         } else {
@@ -209,17 +222,11 @@ async fn watch_process(pid: u32) -> Result<()> {
     println!("(Press Ctrl+C to stop)");
     println!();
 
-    // TODO: Integrate ESN/LSM for anomaly detection
-    // This would:
-    // 1. Collect time-series data (CPU, memory, I/O)
-    // 2. Feed into Echo State Network
-    // 3. Detect anomalies based on deviation from learned patterns
-
+    let sysinfo_pid = Pid::from_u32(pid);
     let mut sys = System::new_all();
-    let sysinfo_pid = sysinfo::Pid::from_u32(pid);
 
     loop {
-        sys.refresh_process(sysinfo_pid);
+        sys.refresh_all();
 
         if let Some(process) = sys.process(sysinfo_pid) {
             println!(

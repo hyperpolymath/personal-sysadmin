@@ -126,9 +126,10 @@ pub async fn analyze(
     let envelope: IncidentEnvelope = serde_json::from_str(&incident_content)?;
 
     // Use: command-line arg > global correlation ID > envelope's ID
-    let corr_id = correlation_id
-        .or_else(correlation::get)
-        .unwrap_or(&envelope.correlation_id);
+    let corr_id: &str = match correlation_id {
+        Some(id) => id,
+        None => correlation::get().unwrap_or(&envelope.correlation_id),
+    };
 
     println!("[Incident Info]");
     println!("  ID:             {}", envelope.id);

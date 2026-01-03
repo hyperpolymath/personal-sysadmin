@@ -8,3 +8,4 @@ pub mod service;
 pub mod security;
 pub mod monitor;
 pub mod health;
+pub mod crisis;

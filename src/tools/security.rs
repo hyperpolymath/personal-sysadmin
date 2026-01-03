@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Security scanning and hardening tools
+//!
+//! Security: All user-supplied paths are validated before use
 
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
+use crate::validation::validate_safe_path;
 
 /// Security action types
 #[derive(Debug, Clone)]
@@ -84,11 +87,15 @@ async fn scan_vulnerabilities() -> Result<()> {
 }
 
 async fn check_permissions(path: &str) -> Result<()> {
-    println!("Permission analysis for: {}", path);
+    // SECURITY: Validate path (though this function uses std::fs, not shell)
+    let safe_path = validate_safe_path(path)
+        .map_err(|e| anyhow::anyhow!("Invalid path: {}", e))?;
+
+    println!("Permission analysis for: {}", safe_path);
 
     use std::os::unix::fs::PermissionsExt;
 
-    let metadata = std::fs::metadata(path)?;
+    let metadata = std::fs::metadata(safe_path)?;
     let mode = metadata.permissions().mode();
 
     println!("Mode: {:o}", mode & 0o7777);

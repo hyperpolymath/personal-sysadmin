@@ -6,13 +6,22 @@
 pub mod reasoning;
 pub mod storage;
 pub mod cache;
-pub mod tools;
 pub mod ai;
 pub mod forum;
 pub mod p2p;
+pub mod rules;
 
 /// Version of the PSA protocol for P2P compatibility
 pub const PROTOCOL_VERSION: &str = "0.1.0";
+
+/// Input validation for security - re-exported from validation module
+pub mod validation;
+
+/// Correlation ID support for cross-tool distributed tracing
+pub mod correlation;
+
+// Tools declared after correlation so crisis.rs can import it
+pub mod tools;
 
 /// Application directories
 pub mod dirs {

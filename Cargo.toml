@@ -38,7 +38,8 @@ reqwest = { version = "0.12", features = ["json"] }
 ollama-rs = "0.2"             # Local LLM via Ollama
 
 # P2P Communication
-libp2p = { version = "0.54", features = ["tokio", "mdns", "gossipsub", "kad"] }
+# Updated from 0.54 to 0.56 to fix RUSTSEC-2025-0009 (ring 0.16.20 via rcgen)
+libp2p = { version = "0.56", features = ["tokio", "mdns", "gossipsub", "kad"] }
 
 # Anomaly detection (integrates with ESN/LSM)
 ndarray = "0.16"

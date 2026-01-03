@@ -7,6 +7,9 @@
 //! - Inferring solutions from partial problem descriptions
 //! - Building confidence scores based on success/failure feedback
 
+// Allow dead code - this is scaffolding for future reasoning capabilities
+#![allow(dead_code)]
+
 use anyhow::Result;
 use crate::storage::Storage;
 use std::collections::HashMap;
@@ -42,6 +45,12 @@ pub type Substitution = HashMap<String, Term>;
 pub struct ReasoningEngine {
     /// Known facts and rules
     clauses: Vec<Clause>,
+}
+
+impl Default for ReasoningEngine {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ReasoningEngine {

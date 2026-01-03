@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Dragonfly (Redis-compatible) cache layer for fast lookups
 
+// Allow dead code - scaffolding for future cache integration
+#![allow(dead_code)]
+
 use anyhow::Result;
 use std::time::Duration;
 
@@ -50,7 +53,7 @@ impl Cache {
     }
 
     /// Set cached value with TTL
-    pub async fn set<T: serde::Serialize>(&self, key: &str, value: &T, ttl: Option<Duration>) -> Result<()> {
+    pub async fn set<T: serde::Serialize>(&self, key: &str, _value: &T, ttl: Option<Duration>) -> Result<()> {
         let full_key = format!("{}{}", self.config.prefix, key);
         let ttl = ttl.unwrap_or(self.config.default_ttl);
         tracing::trace!("Cache SET: {} (TTL: {:?})", full_key, ttl);

@@ -18,6 +18,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use crate::validation::{validate_pattern, validate_service_name};
+
 /// Confidence threshold for crystallizing a solution into a rule
 const CRYSTALLIZATION_THRESHOLD: u32 = 5;
 
@@ -194,7 +196,7 @@ impl RulesEngine {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().map_or(false, |e| e == "toml") {
+            if path.extension().is_some_and(|e| e == "toml") {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     if let Ok(rule) = toml::from_str::<Rule>(&content) {
                         self.add_rule(rule);
@@ -269,19 +271,34 @@ impl RulesEngine {
         conditions.iter().all(|c| self.evaluate_condition(c, context))
     }
 
-    fn evaluate_condition(&self, condition: &Condition, context: &ProblemContext) -> bool {
+    fn evaluate_condition(&self, condition: &Condition, _context: &ProblemContext) -> bool {
         match condition {
             Condition::ProcessRunning { name } => {
-                // Check if process is running
+                // SECURITY: Validate process name pattern before passing to pgrep
+                let safe_name = match validate_pattern(name) {
+                    Ok(n) => n,
+                    Err(e) => {
+                        tracing::warn!("Invalid process pattern '{}': {}", name, e);
+                        return false;
+                    }
+                };
                 std::process::Command::new("pgrep")
-                    .arg(name)
+                    .arg(safe_name)
                     .output()
                     .map(|o| o.status.success())
                     .unwrap_or(false)
             }
             Condition::ServiceState { name, state } => {
+                // SECURITY: Validate service name before passing to systemctl
+                let safe_name = match validate_service_name(name) {
+                    Ok(n) => n,
+                    Err(e) => {
+                        tracing::warn!("Invalid service name '{}': {}", name, e);
+                        return false;
+                    }
+                };
                 std::process::Command::new("systemctl")
-                    .args(["is-active", name])
+                    .args(["is-active", safe_name])
                     .output()
                     .map(|o| {
                         String::from_utf8_lossy(&o.stdout)
@@ -302,6 +319,11 @@ impl RulesEngine {
                     .unwrap_or(false)
             }
             Condition::ShellCheck { command } => {
+                // SECURITY NOTE: ShellCheck intentionally executes arbitrary shell commands.
+                // This is a feature, not a vulnerability. The security model relies on:
+                // 1. Rule files being protected by filesystem permissions
+                // 2. Crystallization only from trusted solution sources
+                // 3. Human review of rules before enabling
                 std::process::Command::new("sh")
                     .args(["-c", command])
                     .output()
@@ -309,12 +331,12 @@ impl RulesEngine {
                     .unwrap_or(false)
             }
             Condition::All { conditions } => {
-                conditions.iter().all(|c| self.evaluate_condition(c, context))
+                conditions.iter().all(|c| self.evaluate_condition(c, _context))
             }
             Condition::Any { conditions } => {
-                conditions.iter().any(|c| self.evaluate_condition(c, context))
+                conditions.iter().any(|c| self.evaluate_condition(c, _context))
             }
-            Condition::Not { condition } => !self.evaluate_condition(condition, context),
+            Condition::Not { condition } => !self.evaluate_condition(condition, _context),
             _ => {
                 // TODO: Implement remaining conditions
                 false
@@ -366,6 +388,12 @@ impl RulesEngine {
     async fn execute_action(&self, action: &Action) -> Result<String> {
         match action {
             Action::Shell { command, sudo } => {
+                // SECURITY NOTE: Shell action intentionally executes arbitrary shell commands.
+                // This is a feature, not a vulnerability. The security model relies on:
+                // 1. Rule files being protected by filesystem permissions
+                // 2. Crystallization only from trusted solution sources
+                // 3. Human review of rules before enabling
+                // 4. sudo flag requires explicit opt-in in rule definition
                 let output = if *sudo {
                     tokio::process::Command::new("sudo")
                         .args(["sh", "-c", command])
@@ -388,15 +416,19 @@ impl RulesEngine {
                 }
             }
             Action::RestartService { name } => {
+                // SECURITY: Validate service name before passing to systemctl
+                let safe_name = validate_service_name(name)
+                    .map_err(|e| anyhow::anyhow!("Invalid service name '{}': {}", name, e))?;
+
                 let output = tokio::process::Command::new("systemctl")
-                    .args(["restart", name])
+                    .args(["restart", safe_name])
                     .output()
                     .await?;
 
                 if output.status.success() {
-                    Ok(format!("Restarted service: {}", name))
+                    Ok(format!("Restarted service: {}", safe_name))
                 } else {
-                    Err(anyhow::anyhow!("Failed to restart {}", name))
+                    Err(anyhow::anyhow!("Failed to restart {}", safe_name))
                 }
             }
             Action::Log { level, message } => {
@@ -527,7 +559,7 @@ pub struct ProblemContext {
 }
 
 /// Result of executing a rule
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ExecutionResult {
     pub success: bool,
     pub outputs: Vec<String>,
@@ -538,7 +570,7 @@ pub struct ExecutionResult {
 impl Default for ExecutionResult {
     fn default() -> Self {
         Self {
-            success: true,
+            success: true,  // Default to success, set to false on error
             outputs: vec![],
             error: None,
             duration_ms: 0.0,

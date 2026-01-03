@@ -66,7 +66,7 @@ fn list_processes(sys: &System, sort_by: &str, top: Option<usize>) -> Result<()>
         None => processes,
     };
 
-    println!("{:>7} {:>6} {:>8} {:>10} {}", "PID", "CPU%", "MEM(MB)", "STATE", "NAME");
+    println!("{:>7} {:>6} {:>8} {:>10} NAME", "PID", "CPU%", "MEM(MB)", "STATE");
     println!("{}", "-".repeat(60));
 
     for (pid, process) in processes {
@@ -133,7 +133,7 @@ fn show_process_tree(sys: &System) -> Result<()> {
 fn find_processes(sys: &System, pattern: &str) -> Result<()> {
     let pattern_lower = pattern.to_lowercase();
 
-    println!("{:>7} {:>6} {:>8} {}", "PID", "CPU%", "MEM(MB)", "NAME");
+    println!("{:>7} {:>6} {:>8} NAME", "PID", "CPU%", "MEM(MB)");
     println!("{}", "-".repeat(50));
 
     for (pid, process) in sys.processes() {

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Forum search and solution compilation
 
+// Allow dead code - scaffolding for future forum integration
+#![allow(dead_code)]
+
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
@@ -10,7 +13,7 @@ pub async fn search(
     query: &str,
     online: bool,
     storage: &Storage,
-    cache: &Cache,
+    _cache: &Cache,
 ) -> Result<()> {
     println!("Searching for: {}", query);
     println!("{}", "-".repeat(50));
@@ -61,7 +64,7 @@ pub async fn search(
 /// Compile a solution from forum responses
 pub async fn compile_solution(
     urls: &[String],
-    storage: &Storage,
+    _storage: &Storage,
 ) -> Result<String> {
     println!("Compiling solution from {} sources...", urls.len());
 

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! ArangoDB storage layer for knowledge base and solution graph
 
+// Allow dead code - scaffolding for future database integration
+#![allow(dead_code)]
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 

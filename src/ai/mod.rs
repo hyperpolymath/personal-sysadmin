@@ -9,7 +9,7 @@ use crate::cache::Cache;
 pub async fn diagnose(
     problem: &str,
     local_only: bool,
-    storage: &Storage,
+    _storage: &Storage,
     cache: &Cache,
 ) -> Result<()> {
     println!("Diagnosing: {}", problem);

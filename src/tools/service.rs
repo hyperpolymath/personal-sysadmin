@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Service management tools (like Autoruns)
+//!
+//! Security: All user-supplied service names are validated before use
 
 use anyhow::Result;
 use crate::storage::Storage;
 use crate::cache::Cache;
+use crate::validation::validate_service_name;
 
 /// Service action types
 #[derive(Debug, Clone)]
@@ -41,8 +44,12 @@ async fn list_services(failed_only: bool) -> Result<()> {
 }
 
 async fn show_status(name: &str) -> Result<()> {
+    // SECURITY: Validate service name to prevent command injection
+    let safe_name = validate_service_name(name)
+        .map_err(|e| anyhow::anyhow!("Invalid service name: {}", e))?;
+
     let output = tokio::process::Command::new("systemctl")
-        .args(["--user", "status", name])
+        .args(["--user", "status", safe_name])
         .output()
         .await?;
 
@@ -93,10 +100,14 @@ async fn list_startup() -> Result<()> {
 }
 
 async fn show_deps(name: &str) -> Result<()> {
-    println!("Dependencies for {}:", name);
+    // SECURITY: Validate service name to prevent command injection
+    let safe_name = validate_service_name(name)
+        .map_err(|e| anyhow::anyhow!("Invalid service name: {}", e))?;
+
+    println!("Dependencies for {}:", safe_name);
 
     let output = tokio::process::Command::new("systemctl")
-        .args(["--user", "list-dependencies", name])
+        .args(["--user", "list-dependencies", safe_name])
         .output()
         .await?;
 

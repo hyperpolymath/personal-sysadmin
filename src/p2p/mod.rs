@@ -53,7 +53,7 @@ async fn join_mesh(peer: &str) -> Result<()> {
     Ok(())
 }
 
-async fn share_solution(solution_id: &str, storage: &Storage) -> Result<()> {
+async fn share_solution(solution_id: &str, _storage: &Storage) -> Result<()> {
     println!("Sharing solution {} with mesh...", solution_id);
 
     // Would:
@@ -65,7 +65,7 @@ async fn share_solution(solution_id: &str, storage: &Storage) -> Result<()> {
     Ok(())
 }
 
-async fn sync_knowledge(storage: &Storage, cache: &Cache) -> Result<()> {
+async fn sync_knowledge(_storage: &Storage, _cache: &Cache) -> Result<()> {
     println!("Synchronizing knowledge base with mesh peers...");
 
     // Would:

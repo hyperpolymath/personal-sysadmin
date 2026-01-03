@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Disk and storage management tools
+//!
+//! Security: All user-supplied paths are validated before use in commands
 
 use anyhow::Result;
 use sysinfo::Disks;
 use crate::storage::Storage;
 use crate::cache::Cache;
+use crate::validation::validate_safe_path;
 
 /// Disk action types
 #[derive(Debug, Clone)]
@@ -72,13 +75,17 @@ fn format_size(bytes: u64) -> String {
 }
 
 async fn find_large(min_size: &str, path: &str) -> Result<()> {
-    let min_bytes = parse_size(min_size)?;
-    println!("Finding files larger than {} in {}...", min_size, path);
+    // SECURITY: Validate path to prevent command injection
+    let safe_path = validate_safe_path(path)
+        .map_err(|e| anyhow::anyhow!("Invalid path: {}", e))?;
+
+    let _min_bytes = parse_size(min_size)?;
+    println!("Finding files larger than {} in {}...", min_size, safe_path);
 
     // Would use walkdir crate for recursive search
-    // For now, use find command
+    // For now, use find command with validated path
     let output = tokio::process::Command::new("find")
-        .args([path, "-type", "f", "-size", &format!("+{}", min_size)])
+        .args([safe_path, "-type", "f", "-size", &format!("+{}", min_size)])
         .output()
         .await?;
 
@@ -107,7 +114,11 @@ async fn show_io() -> Result<()> {
 }
 
 async fn find_duplicates(path: &str) -> Result<()> {
-    println!("Finding duplicate files in {}...", path);
+    // SECURITY: Validate path to prevent command injection
+    let safe_path = validate_safe_path(path)
+        .map_err(|e| anyhow::anyhow!("Invalid path: {}", e))?;
+
+    println!("Finding duplicate files in {}...", safe_path);
     // Would hash files and group by hash
     Ok(())
 }

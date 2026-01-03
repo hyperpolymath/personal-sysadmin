@@ -18,6 +18,8 @@ mod tools;
 mod ai;
 mod forum;
 mod p2p;
+mod validation;
+mod correlation;
 
 // Re-use action enums from tool modules
 use tools::process::ProcessAction;
@@ -39,6 +41,10 @@ struct Cli {
     /// Verbosity level (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// Correlation ID for cross-tool tracing (auto-generated if not provided)
+    #[arg(long, global = true)]
+    correlation_id: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -116,6 +122,16 @@ enum Commands {
 
     /// Show system health summary
     Health,
+
+    /// Crisis mode - analyze incident bundle from emergency-room
+    Crisis {
+        /// Path to incident bundle from system-emergency-room
+        #[arg(long)]
+        incident: String,
+        /// Correlation ID for cross-tool tracing
+        #[arg(long)]
+        correlation_id: Option<String>,
+    },
 }
 
 // Action enums with clap derive for CLI parsing
@@ -305,6 +321,9 @@ impl From<MeshActionCli> for MeshAction {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
+    // Initialize correlation ID for distributed tracing
+    let corr_id = correlation::init(cli.correlation_id.clone());
+
     // Initialize logging
     let log_level = match cli.verbose {
         0 => "info",
@@ -317,6 +336,8 @@ async fn main() -> anyhow::Result<()> {
             .unwrap_or_else(|_| log_level.into()))
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    tracing::info!(correlation_id = %corr_id, "Starting PSA session");
 
     // Initialize storage and cache connections
     let storage = storage::Storage::new().await?;
@@ -355,6 +376,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Health => {
             tools::health::show(&storage, &cache).await?;
+        }
+        Commands::Crisis { incident, correlation_id } => {
+            tools::crisis::analyze(&incident, correlation_id.as_deref(), &storage, &cache).await?;
         }
     }
 

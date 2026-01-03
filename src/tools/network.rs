@@ -43,7 +43,7 @@ pub async fn handle(action: NetworkAction, _storage: &Storage, _cache: &Cache) -
 }
 
 async fn show_connections(state_filter: Option<&str>) -> Result<()> {
-    println!("{:<6} {:<23} {:<23} {:<12} {}", "PROTO", "LOCAL", "REMOTE", "STATE", "PROCESS");
+    println!("{:<6} {:<23} {:<23} {:<12} PROCESS", "PROTO", "LOCAL", "REMOTE", "STATE");
     println!("{}", "-".repeat(80));
 
     // Use netstat2 or procfs to get connections
@@ -135,7 +135,7 @@ fn parse_tcp_state(hex: &str) -> &'static str {
 }
 
 async fn show_listening_ports() -> Result<()> {
-    println!("{:<6} {:<23} {}", "PROTO", "ADDRESS", "PROCESS");
+    println!("{:<6} {:<23} PROCESS", "PROTO", "ADDRESS");
     println!("{}", "-".repeat(50));
 
     // Show only listening sockets

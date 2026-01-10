@@ -8,7 +8,8 @@
        (created . "2025-12-29T03:23:52+00:00")
        (updated . "2025-12-29T03:23:52+00:00")
        (project . "Personal Sysadmin")
-       (repo . "personal-sysadmin")))
+       (repo . "personal-sysadmin")
+       (egress-checker . "Idris2 policy gate")))
     (current-position
       ((phase . "initial")
        (overall-completion . 0)

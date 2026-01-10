@@ -62,6 +62,11 @@ PSA is designed for security:
 * **No outbound network** by default (whitelist for forum search)
 * **Non-root** execution
 
+== Idris2 Policy Gate
+
+Outbound payloads are validated by the AmbientOps Idris2 checker before any
+egress. See `docs/IDRIS2_INTEGRATION.adoc`.
+
 == Rules System
 
 Solutions follow a "crystallization" pattern:

@@ -181,4 +181,4 @@ nerdctl compose -f nerdctl-compose.yaml --profile storage --profile cache up -d
 
 == License
 
-AGPL-3.0-or-later
+PMPL-1.0-or-later

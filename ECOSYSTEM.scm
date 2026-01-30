@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: MPL-2.0-or-later
 ;; ECOSYSTEM.scm - Project relationships and ecosystem position
 
 (ecosystem
@@ -42,10 +42,10 @@
          (description . "Routes automation between human and AI agents")
          (integration . "PSA rules could feed HAR routing decisions")))
 
-      (gitvisor
+      (git-hud
         ((relationship . inspiration)
          (description . "Git repository management and monitoring")
-         (integration . "PSA rules store uses git-like versioning inspired by gitvisor")))))
+         (integration . "PSA rules store uses git-like versioning inspired by git-hud")))))
 
    (what-this-is
      ("AI-assisted sysadmin toolkit for Linux"

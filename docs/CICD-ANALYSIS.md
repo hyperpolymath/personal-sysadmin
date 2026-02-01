@@ -83,11 +83,11 @@ Use matrix builds for multi-platform testing instead of separate workflows.
 
 ## Cross-Ecosystem CI/CD Tool Design
 
-### Architecture: gitvisor
+### Architecture: git-hud
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                   gitvisor                       │
+│                   git-hud                       │
 ├─────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌──────────┐│
 │  │ ArangoDB    │  │ Dragonfly   │  │ Radicle  ││
@@ -153,5 +153,5 @@ Use matrix builds for multi-platform testing instead of separate workflows.
 1. Set up org secrets for mirroring
 2. Consolidate language blockers
 3. Migrate Jekyll to casket-ssg
-4. Implement gitvisor prototype
+4. Implement git-hud prototype
 5. Deploy K8s CI runner pool

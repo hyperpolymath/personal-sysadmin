@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "gitvisor ArangoDB Schema",
-  "description": "Schema for gitvisor graph database",
+  "title": "git-hud ArangoDB Schema",
+  "description": "Schema for git-hud graph database",
   
   "collections": {
     "repos": {
@@ -91,7 +91,7 @@
   },
   
   "graphs": {
-    "gitvisor_graph": {
+    "git-hud_graph": {
       "edge_definitions": [
         { "collection": "repo_depends_on", "from": ["repos"], "to": ["repos"] },
         { "collection": "rule_fixes", "from": ["rules"], "to": ["patterns"] },

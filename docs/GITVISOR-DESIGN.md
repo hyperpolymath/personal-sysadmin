@@ -1,4 +1,4 @@
-# gitvisor: Neurosymbolic CI/CD Intelligence System
+# git-hud: Neurosymbolic CI/CD Intelligence System
 
 ## Core Philosophy
 
@@ -11,7 +11,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        gitvisor                                  │
+│                        git-hud                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -234,10 +234,10 @@ results:
 
 ```bash
 #!/bin/bash
-# .git/hooks/pre-commit (injected by gitvisor)
+# .git/hooks/pre-commit (injected by git-hud)
 
 # Fast local checks (cached rules)
-gitvisor check --local --cached
+git-hud check --local --cached
 
 # Checks:
 # - No banned languages (TS, Go, Python, Makefile)
@@ -252,8 +252,8 @@ gitvisor check --local --cached
 #!/bin/bash
 # .git/hooks/pre-push
 
-# Validate against gitvisor rules
-gitvisor validate --pre-push
+# Validate against git-hud rules
+git-hud validate --pre-push
 
 # Checks:
 # - All commits signed
@@ -267,11 +267,11 @@ gitvisor validate --pre-push
 #!/bin/bash
 # Server-side hook
 
-# Trigger gitvisor scan
-gitvisor scan --repo $REPO --event push
+# Trigger git-hud scan
+git-hud scan --repo $REPO --event push
 
 # Auto-fix if configured
-gitvisor fix --auto --repo $REPO
+git-hud fix --auto --repo $REPO
 ```
 
 ## Self-Improving Diagnostics
@@ -309,7 +309,7 @@ gitvisor fix --auto --repo $REPO
 ### Diagnostic Report Format
 
 ```yaml
-# .gitvisor/diagnostic.yml
+# .git-hud/diagnostic.yml
 scan_date: 2025-12-29T00:00:00Z
 repo: hyperpolymath/bunsenite
 health_score: 85
@@ -344,7 +344,7 @@ learnings:
 
 ## New Repo Bootstrap
 
-When a new repo is created, gitvisor automatically:
+When a new repo is created, git-hud automatically:
 
 ```logtalk
 :- object(repo_bootstrap).
@@ -384,10 +384,10 @@ When a new repo is created, gitvisor automatically:
 │   ├── codeql.yml          # Security scanning
 │   ├── scorecard.yml       # OSSF compliance
 │   ├── rsr-policy.yml      # Language policy
-│   └── gitvisor-check.yml  # gitvisor integration
+│   └── git-hud-check.yml  # git-hud integration
 │
-.gitvisor/
-├── config.yml              # gitvisor settings
+.git-hud/
+├── config.yml              # git-hud settings
 ├── rules.pl                # Local rule overrides
 └── diagnostic.yml          # Latest scan results
 │
@@ -407,14 +407,14 @@ STATE.scm                   # Project state
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitvisor
+  name: git-hud
 spec:
   replicas: 3
   template:
     spec:
       containers:
-        - name: gitvisor-core
-          image: hyperpolymath/gitvisor:latest
+        - name: git-hud-core
+          image: hyperpolymath/git-hud:latest
           resources:
             requests:
               memory: "2Gi"
@@ -426,14 +426,14 @@ spec:
               value: "redis://dragonfly:6379"
 
         - name: logtalk-engine
-          image: hyperpolymath/gitvisor-logtalk:latest
+          image: hyperpolymath/git-hud-logtalk:latest
           resources:
             requests:
               memory: "512Mi"
               cpu: "500m"
 
         - name: neural-worker
-          image: hyperpolymath/gitvisor-neural:latest
+          image: hyperpolymath/git-hud-neural:latest
           resources:
             requests:
               memory: "4Gi"
@@ -443,7 +443,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: gitvisor-api
+  name: git-hud-api
 spec:
   type: LoadBalancer
   ports:

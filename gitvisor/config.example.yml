@@ -1,12 +1,12 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# gitvisor configuration
+# SPDX-License-Identifier: MPL-2.0-or-later
+# git-hud configuration
 
 version: 1
 
 # Database connections
 arangodb:
   url: http://localhost:8529
-  database: gitvisor
+  database: git-hud
   username: root
   password: ${ARANGO_PASSWORD}
 
@@ -34,7 +34,7 @@ rules:
 
 # Learning
 neural:
-  model: gitvisor-patterns-v1
+  model: git-hud-patterns-v1
   update_interval: 24h
   min_pattern_frequency: 10
 
